@@ -109,8 +109,8 @@ def mask_unigram(data, lm, n=1):
     mask_token = lm["mask_token"]
     uncased = lm["uncased"]
 
-    if torch.cuda.is_available():
-        torch.set_default_tensor_type('torch.cuda.FloatTensor')
+    # if torch.cuda.is_available():
+    #     torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
     sent1, sent2 = data["sent1"], data["sent2"]
 
@@ -187,8 +187,8 @@ def evaluate(args):
         uncased = True
 
     model.eval()
-    if torch.cuda.is_available():
-        model.to('cuda')
+    # if torch.cuda.is_available():
+    #     model.to('cuda')
 
     mask_token = tokenizer.mask_token
     log_softmax = torch.nn.LogSoftmax(dim=0)
@@ -276,10 +276,11 @@ def evaluate(args):
     print()
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--input_file", type=str, help="path to input file")
-parser.add_argument("--lm_model", type=str, help="pretrained LM model to use (options: bert, roberta, albert)")
-parser.add_argument("--output_file", type=str, help="path to output file with sentence scores")
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--input_file", type=str, help="path to input file")
+    parser.add_argument("--lm_model", type=str, help="pretrained LM model to use (options: bert, roberta, albert)")
+    parser.add_argument("--output_file", type=str, help="path to output file with sentence scores")
 
-args = parser.parse_args()
-evaluate(args)
+    args = parser.parse_args()
+    evaluate(args)
