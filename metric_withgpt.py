@@ -237,15 +237,25 @@ def evaluate(args):
     df_score.to_csv(args.output_file)
     print('=' * 100)
     print('Total examples:', N)
-    print('Metric score:', round((stereo_score + antistereo_score) / N * 100, 2))
-    print('Stereotype score:', round(stereo_score  / total_stereo * 100, 2))
-    if antistereo_score != 0:
-        print('Anti-stereotype score:', round(antistereo_score  / total_antistereo * 100, 2))
-    print("Num. neutral:", neutral, round(neutral / N * 100, 2))
+    metric_score = round((stereo_score + antistereo_score) / N * 100, 2)
+    stereo_score_final = round(stereo_score  / total_stereo * 100, 2)
+    anti_stereo_score_final = 0
+    neutral_score = round(neutral / N * 100, 2)
+    print('Metric score:', metric_score)
+    print('Stereotype score:',stereo_score_final)
+    if antistereo_score!= 0:
+        anti_stereo_score_final = round(antistereo_score  / total_antistereo * 100, 2)
+        print('Anti-stereotype score:',anti_stereo_score_final)
+    print("Num. neutral:", neutral, neutral_score)
     print('=' * 100)
     print()
 
-
+    # Additional part to be added to metric file
+    split_no = args.output_file.split("_")[-3]
+    exp_name = "gpt"
+    text_file = "data/{}_{}.txt".format(exp_name,split_no)
+    print(" ".join([str(metric_score), str(stereo_score) ,str(anti_stereo_score_final),str(neutral_score)]), file=open(text_file,"a"))
+    print("Metrics stored in : ",text_file)
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--input_file", type=str, help="path to input file")
