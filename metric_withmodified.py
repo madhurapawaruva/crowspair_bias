@@ -58,6 +58,7 @@ def get_log_prob_unigram(masked_token_ids, token_ids, mask_idx, lm):
     log_softmax = lm["log_softmax"]
     mask_token = lm["mask_token"]
     uncased = lm["uncased"]
+  
 
     # get model hidden states
     output = model(masked_token_ids)
@@ -113,6 +114,8 @@ def mask_unigram(data, lm, n=1):
     log_softmax = lm["log_softmax"]
     mask_token = lm["mask_token"]
     uncased = lm["uncased"]
+    lambda_ = lm["lamb"]
+   
 
     if torch.cuda.is_available():
         torch.set_default_tensor_type('torch.cuda.FloatTensor')
@@ -139,7 +142,7 @@ def mask_unigram(data, lm, n=1):
     sent1_log_probs = 0.
     sent2_log_probs = 0.
     total_masked_tokens = 0
-    lambda_ = 0.7
+    
     # skipping CLS and SEP tokens, they'll never be masked
     for i in range(1, N-1):
         sent1_masked_token_ids = sent1_token_ids.clone().detach()
@@ -188,7 +191,7 @@ def evaluate(args):
     print("Input:", args.input_file)
     print("Model:", args.lm_model)
     print("=" * 100)
-
+    print("Calculating for lambda_: ", args.lamb)
     logging.basicConfig(level=logging.INFO)
 
     # load data into panda DataFrame
@@ -222,7 +225,8 @@ def evaluate(args):
           "tokenizer": tokenizer,
           "mask_token": mask_token,
           "log_softmax": log_softmax,
-          "uncased": uncased
+          "uncased": uncased,
+          "lamb": args.lamb
     }
 
     # score each sentence. 
@@ -289,19 +293,31 @@ def evaluate(args):
     df_score.to_csv(args.output_file)
     print('=' * 100)
     print('Total examples:', N)
-    print('Metric score:', round((stereo_score + antistereo_score) / N * 100, 2))
-    print('Stereotype score:', round(stereo_score  / total_stereo * 100, 2))
-    if antistereo_score != 0:
-        print('Anti-stereotype score:', round(antistereo_score  / total_antistereo * 100, 2))
-    print("Num. neutral:", neutral, round(neutral / N * 100, 2))
+    metric_score = round((stereo_score + antistereo_score) / N * 100, 2)
+    stereo_score_final = round(stereo_score  / total_stereo * 100, 2)
+    anti_stereo_score_final = 0
+    neutral_score = round(neutral / N * 100, 2)
+    print('Metric score:', metric_score)
+    print('Stereotype score:',stereo_score_final)
+    if antistereo_score!= 0:
+        anti_stereo_score_final = round(antistereo_score  / total_antistereo * 100, 2)
+        print('Anti-stereotype score:',anti_stereo_score_final)
+    print("Num. neutral:", neutral, neutral_score)
     print('=' * 100)
     print()
 
+    # Additional part to be added to metric file
+    split_no = args.output_file.split("_")[-3]
+    exp_name = "bert"
+    text_file = "data/{}_{}.txt".format(exp_name,args.lamb)
+    print(" ".join([str(metric_score), str(stereo_score) ,str(anti_stereo_score_final),str(neutral_score)]), file=open(text_file,"a"))
+    print("Metrics stored in : ",text_file)
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--input_file", type=str, help="path to input file")
-parser.add_argument("--lm_model", type=str, help="pretrained LM model to use (options: bert, roberta, albert)")
-parser.add_argument("--output_file", type=str, help="path to output file with sentence scores")
-
-args = parser.parse_args()
-evaluate(args)
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--input_file", type=str, help="path to input file")
+    parser.add_argument("--lm_model", type=str, help="pretrained LM model to use (options: bert, roberta, albert)")
+    parser.add_argument("--output_file", type=str, help="path to output file with sentence scores")
+    parser.add_argument("--lamb", type=float, help="lambda parameter")
+    args = parser.parse_args()
+    evaluate(args)
